@@ -10,3 +10,7 @@ python varjan 3.8   up
 Generate the requirements.txt File
 pip freeze > requirements.txt
 
+
+utl web web sid
+https://zerodhajanral.streamlit.app/
+
