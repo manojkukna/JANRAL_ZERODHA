@@ -229,7 +229,7 @@ def convert_df(df, file_name):
         label="Download data as CSV",
         data=csv1,
         file_name=file_name,
-        mime="text/csv",key=f"{csv1}") )
+        mime="text/csv",key=f"{csv1}")
     return
 def dataframe_columns(list):
 
