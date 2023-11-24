@@ -1,24 +1,24 @@
-import xlwings
-import pandas as pd
-import plotly.express as px
-import copy
-from tabulate import tabulate
-# Python3 code to select
-# data from excel
-import xlwings as xw
-import math
+# import xlwings
+# import pandas as pd
+# import plotly.express as px
 
-pd.set_option("display.max_rows", None)
-pd.set_option("display.max_columns", 1000)
-pd.set_option("display.width", 1000)
-
-# from prophet.plot import plot_plotly
-# from plotly import graph_objects as go
-
+# from tabulate import tabulate
+# # Python3 code to select
+# # data from excel
+# import xlwings as xw
+# import math
+#
+# pd.set_option("display.max_rows", None)
+# pd.set_option("display.max_columns", 1000)
+# pd.set_option("display.width", 1000)
+#
+# # from prophet.plot import plot_plotly
+# # from plotly import graph_objects as go
+#
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-
+import copy
 
 
 
@@ -213,12 +213,12 @@ tradebook['symbol'] = tradebook['symbol'].str.rsplit("-").str[0]
 Book_NAME = "data_NSC_ALL2.xlsx"
 
 
-def print_sheets(df, sheets_name, range):
-    ws = xlwings.Book(Book_NAME).sheets(sheets_name)
-    ws.range(range).value = pd.DataFrame(df.round(2))
-def exl_sheets_clear(sheets_name):
-    ws = xlwings.Book(Book_NAME).sheets(sheets_name)
-    ws.clear()
+# def print_sheets(df, sheets_name, range):
+#     ws = xlwings.Book(Book_NAME).sheets(sheets_name)
+#     ws.range(range).value = pd.DataFrame(df.round(2))
+# def exl_sheets_clear(sheets_name):
+#     ws = xlwings.Book(Book_NAME).sheets(sheets_name)
+#     ws.clear()
 
 # exl_sheets_clear(sheets_name="Adj Close")
 # print_sheets(df=df, sheets_name="Adj Close", range="A1")
