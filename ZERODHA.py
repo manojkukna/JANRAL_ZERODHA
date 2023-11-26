@@ -200,18 +200,7 @@ def data_total_all(data):
     data_total_pd.reset_index(inplace=True, drop=True)
     return data_total_pd
 
-# Book_NAME = "data_NSC_ALL2.xlsx"
-#
 
-# def print_sheets(df, sheets_name, range):
-#     ws = xlwings.Book(Book_NAME).sheets(sheets_name)
-#     ws.range(range).value = pd.DataFrame(df.round(2))
-# def exl_sheets_clear(sheets_name):
-#     ws = xlwings.Book(Book_NAME).sheets(sheets_name)
-#     ws.clear()
-
-# exl_sheets_clear(sheets_name="Adj Close")
-# print_sheets(df=df, sheets_name="Adj Close", range="A1")
 
 def convert_df(df, file_name):
     csv1 = df.to_csv().encode("utf-8")
