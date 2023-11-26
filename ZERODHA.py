@@ -1,28 +1,15 @@
-# import xlwings
-# import pandas as pd
-# import plotly.express as px
 
-# from tabulate import tabulate
-# # Python3 code to select
-# # data from excel
-# import xlwings as xw
-# import math
-#
-# pd.set_option("display.max_rows", None)
-# pd.set_option("display.max_columns", 1000)
-# pd.set_option("display.width", 1000)
-#
-# # from prophet.plot import plot_plotly
-# # from plotly import graph_objects as go
-#
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import copy
 
+import time
+pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns",None)
+pd.set_option("display.width",None)
 
-
-st.set_page_config(page_title="ZERODHA",page_icon="🌍",layout="wide")
+st.set_page_config(page_title="JANRAL ZERODHA",page_icon="🌍",layout="wide")
 
 
 
@@ -30,42 +17,63 @@ theme_plotly = None # None or streamlit
 
 # Style
 with open('style.css')as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html = True)
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-def read_file_csv_Excel(file):
-    """
-    Read and return DataFrame based on file type (CSV or Excel).
-    """
-    if file is not None:
-        file_extension = file.name.split('.')[-1].lower()
-        if file_extension == 'csv':
-            df = pd.read_csv(file)
-        elif file_extension in ['xlsx', 'xls']:
-            df = pd.read_excel(file, engine='openpyxl')
-        else:
-            st.warning("Please upload a CSV or Excel file.")
-            return None
-        return df
+
+
+def tradebook_rename_columns(rename_columns):
+    try:
+       new_column_names = {'Symbol':'symbol', 'ISIN': 'isin', 'Trade Date': 'trade_date', 'Exchange': 'exchange',
+                        'Segment': 'segment', 'Series': 'series', 'Trade Type': 'trade_type',
+                        'Auction': 'auction', 'Quantity': 'quantity', 'Price': 'price', 'Trade ID': 'trade_id',
+                        'Order ID': 'order_id', 'Order Execution Time': 'order_execution_time'}
+       tradebook_rename_columns = rename_columns.rename(columns=new_column_names)
+       return tradebook_rename_columns
+
+    except Exception as e:
+        print("Error in login", e)
+        return rename_columns
+
+def isnull_row2_read_excel(tradebook,columns,file_extension):
+    # row  tnull valu dilit
+    df = file_extension(tradebook)
+    isnull_row = df[df.iloc[:,columns].isnull()]
+    if len(isnull_row):
+       df = file_extension(tradebook, header=len(isnull_row)+1)
+       df = df.dropna(axis=1, how='all')
+       df = tradebook_rename_columns(rename_columns=df)
+    return df
 
 
 def uploaded_file():
-    st.title("CSV and Excel File Uploader")
-
-    uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx", "xls"])
-
+    uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'xls', 'xlsm', 'csv'])
     if uploaded_file is not None:
-        st.subheader("File Content:")
+       # Check the file type and read accordingly
+       if uploaded_file.name.endswith(('.xlsx', '.xls', '.xlsm')):
+          df =isnull_row2_read_excel(tradebook=uploaded_file, columns=4,file_extension=pd.read_excel)
+          return df
+       elif uploaded_file.name.endswith('.csv'):
+           # df = pd.read_csv(uploaded_file)
+           df = isnull_row2_read_excel(tradebook=uploaded_file, columns=4,file_extension=pd.read_csv)
+           return df
+tradebook = pd.DataFrame(uploaded_file())
 
-        # Read and display the contents of the uploaded file
-        df = read_file_csv_Excel(uploaded_file)
-        return df
+
+if not len(tradebook):
+     tradebook = pd.read_excel('tradebook-LG5706-EQ.xlsx', engine='openpyxl')        # tradebook-LG5706-EQ.xlsx  # 'tradebook-JD0585-EQ.xlsm'
 
 
-read_file = uploaded_file()
+
+
+tradebook['symbol'] = tradebook['symbol'].str.rsplit("-").str[0]
+
+# print("174",tradebook.head(10))
+
+
 
 
 def data_analist( symbol_df_isin, symbol):
-    df = pd.DataFrame( symbol_df_isin)
+    df = pd.DataFrame(symbol_df_isin)
     df["Invested"] = df['quantity'] * df['price']
 
     df.sort_values('symbol', axis=0, ascending=True, inplace=True)
@@ -107,9 +115,7 @@ def data_analist( symbol_df_isin, symbol):
 
             entry_buy['quantity'] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc('quantity')]
             entry_buy['sell_value'] = entry_buy['sell_value'] + entry_buy_df.iloc[date, entry_buy_df.columns.get_loc("Invested")]
-
             entry_buy['sell_quantity'] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc('quantity')]
-
             entry_buy["Sell_avg"] = entry_buy['sell_value'] / entry_buy['Qtt_sell']
 
             if entry_buy["Buy_avg"] == 0:
@@ -133,8 +139,8 @@ def data_analist_all(data):
     all_market = []
     for isin in isin_list:
         symbol_df_isin = data.loc[(data['isin'] == isin)]
-        symbol =  symbol_df_isin.iloc[0,  symbol_df_isin.columns.get_loc("symbol")]
-        df = data_analist( symbol_df_isin= symbol_df_isin, symbol=symbol)
+        symbol = symbol_df_isin.iloc[0,  symbol_df_isin.columns.get_loc("symbol")]
+        df = data_analist(symbol_df_isin= symbol_df_isin, symbol=symbol)
         all_market.append(df)
 
     appended_all_market = pd.concat(all_market, ignore_index=True)
@@ -143,7 +149,7 @@ def data_analist_all(data):
 
 
 def data_total_all(data):
-    isin_list = tradebook["isin"].unique()
+    isin_list = data["isin"].unique()
     all_market = []
 
     data_total= {"trade_date": None, 'symbol': None, 'trade_type': None, 'Entry': None, 'quantity': 0, "Buy_avg": 0.00,
@@ -193,25 +199,9 @@ def data_total_all(data):
     data_total_pd["PNL_cumsum"] = data_total_pd['PNL_Total'].cumsum()
     data_total_pd.reset_index(inplace=True, drop=True)
     return data_total_pd
-tradebook = pd.DataFrame(read_file)
 
-
-if not len(tradebook):
-    tradebook = pd.read_excel('tradebook-LG5706-EQ 1-1-2022.xlsx', engine='openpyxl')
-    tradebook = pd.DataFrame(tradebook)
-
-tradebook['symbol'] = tradebook['symbol'].str.rsplit("-").str[0]
-
-# ff = tradebook.loc[(tradebook['isin'] == "INE699H01024")]
-# # tradebook['symbol'] = tradebook['symbol'].str.rsplit("-", 1).str[-1]
+# Book_NAME = "data_NSC_ALL2.xlsx"
 #
-#
-# print(ff)
-
-
-
-Book_NAME = "data_NSC_ALL2.xlsx"
-
 
 # def print_sheets(df, sheets_name, range):
 #     ws = xlwings.Book(Book_NAME).sheets(sheets_name)
@@ -232,14 +222,11 @@ def convert_df(df, file_name):
         mime="text/csv",key=f"{csv1}")
     return
 def dataframe_columns(list):
-
     dataframe_columns_list = list.columns.values.tolist()
     return dataframe_columns_list
 def line_chart(data, title):
     st.line_chart(data)
     st.title(title)
-
-
 def dataframe(dataframe_df, default, trade_type, symbol):
     global df_selec
     if symbol:
@@ -272,8 +259,6 @@ def risk_management(risk_df,symbol):
         risk_df = risk_df.loc[(risk_df['symbol'] == symbol)]
     else:
         risk_df = risk_df
-
-
     risk_list = []
     risk_dict = {"Invested": None, "Wins": None, "Losser": None, "Nb_of_trade": None, "Profit": None, "Loss": None,
                  "Fees": 0.00, "RR": 0.00, "Avg_Winner": 0.00, "Avg_Loser": 0.00, "Bigges_Winner": 0.00,
@@ -282,7 +267,6 @@ def risk_management(risk_df,symbol):
                  "PNL_Total_parsent": 0.00, "Avg_Return": 0.00}
 
     risk_df = risk_df.round(2)
-
     buy_df = risk_df.loc[(risk_df['trade_type'] == "buy")]
     sell_df = risk_df.loc[(risk_df['trade_type'] == "sell")]
 
@@ -388,14 +372,10 @@ def Loss_pie(pie_df, symbol):
     fig.update_layout(legend_title='Loss value', legend_y=0.9)
     fig.update_traces(textinfo='percent+label', textposition='inside')
     st.plotly_chart(fig, use_container_width=True, theme=theme_plotly)
-
-
 data_analist_all = data_analist_all(data=tradebook)
 
 # exl_sheets_clear(sheets_name="Adj Close")
 # print_sheets(df=df, sheets_name="Adj Close", range="A1")
-
-
 unique_tickers = tradebook
 unique_tickers.sort_values('symbol', axis=0, ascending=True, inplace=True)
 
@@ -406,6 +386,7 @@ stock_tickers_trade_type = st.sidebar.selectbox('selected   selectbox   trade_ty
 stock_tickers = st.sidebar.selectbox('selected  selectbox  symbol', unique_tickers["symbol"].unique())
 st.sidebar.header("stock symbol_all Please filter")
 stock_tickers_trade_type_ALL = st.sidebar.selectbox('selected   selectbox ', ['Buy/sell', 'Buy', "Sell"])
+
 
 metric_label(risk_dict=risk_management(risk_df=data_analist_all,symbol=stock_tickers))
 left, right, = st.columns(2)  # center
@@ -438,4 +419,4 @@ df2 = dataframe(dataframe_df=data_analist_all,
 
 # janral zorhodh
 #  JANRAL ZERODHA
-# streamlit run ZERODHA.py
+# streamlit run ZERODHA+26+11+2023++.py
