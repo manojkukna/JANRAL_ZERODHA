@@ -5,6 +5,9 @@ import plotly.express as px
 import copy
 
 import time
+
+#ZERODHA+updet.py
+
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns",None)
 pd.set_option("display.width",None)
@@ -88,12 +91,13 @@ def data_analist( symbol_df_isin, symbol):
     # print( entry_buy_df.head(100))
     entry_buy = {"trade_date": None, 'symbol': None, 'trade_type': None, 'Entry': None, 'quantity': 0, "Buy_avg": 0.00,
                  "Buy_valu": 0.00,"Qtt_BUY": 0.00, "Sell_avg": 0.00, "sell_value": 0.00, 'Qtt_sell': 0, "CHANG": 0.00,
-                 "PNL": 0.00, "PNL_Total": 0.00, 'sell_quantity': 0.00, 'Invested': 0., "Invested_sell": 0.00}
+                 "PNL": 0.00, "PNL_Total": 0.00, 'sell_quantity': 0.00, 'Invested': 0., "Invested_sell": 0.00,"isin":None}
     for date in DATE_LIST:
         entry_buy["trade_date"] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc('trade_date')]
         entry_buy["symbol"] = symbol
         entry_buy["trade_type"] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc('trade_type')]
         entry_buy["Entry"] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc('price')]
+        entry_buy["isin"] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc("isin")]
         if entry_buy["trade_type"] == "buy":
             entry_buy["Qtt_BUY"] = entry_buy_df.iloc[date, entry_buy_df.columns.get_loc('quantity')] + entry_buy[
                 "Qtt_BUY"]
@@ -158,7 +162,7 @@ def data_total_all(data):
     for isin in isin_list:
         symbol_df_isin = tradebook.loc[(tradebook['isin'] == isin)]
         symbol = symbol_df_isin .iloc[0, symbol_df_isin .columns.get_loc("symbol")]
-        data = data_analist( symbol_df_isin =  symbol_df_isin , symbol=symbol)
+        data = data_analist( symbol_df_isin=symbol_df_isin , symbol=symbol)
         # print(data.tail(5))
         buy_df = data.loc[(data['trade_type'] == "buy")]
         sell_df = data.loc[(data['trade_type'] == "sell")]
@@ -223,6 +227,9 @@ def dataframe(dataframe_df, default, trade_type, symbol):
     else:
         dataframe_df = dataframe_df
 
+    dataframe_df = pd.DataFrame(dataframe_df)
+    dataframe_df['cumsum'] = dataframe_df['PNL'].cumsum()
+
     if trade_type == 'buy':
         df_selec = dataframe_df.loc[(dataframe_df['trade_type'] == "buy")]
     if trade_type == "sell":
@@ -233,7 +240,9 @@ def dataframe(dataframe_df, default, trade_type, symbol):
     st.title("# :red[ZERODHA ]")
     st.title(f"#:red[ SYMBOL-------{symbol}--------Rs.{round(PNL_Total,2)}]")
 
-    st.line_chart(dataframe_df, x='trade_date', y='PNL_Total')
+
+
+    st.line_chart(dataframe_df, x='trade_date', y='cumsum')
 
     df_selec.reset_index(inplace=True, drop=True)
     df_selec = df_selec.round(2)
@@ -376,18 +385,7 @@ stock_tickers = st.sidebar.selectbox('selected  selectbox  symbol', unique_ticke
 st.sidebar.header("stock symbol_all Please filter")
 stock_tickers_trade_type_ALL = st.sidebar.selectbox('selected   selectbox ', ['Buy/sell', 'Buy', "Sell"])
 
-
-metric_label(risk_dict=risk_management(risk_df=data_analist_all,symbol=stock_tickers))
-left, right, = st.columns(2)  # center
-with left:
-    Profit_pie(pie_df=data_analist_all.round(2), symbol=stock_tickers)
-with right:
-    Loss_pie(pie_df=data_analist_all.round(2), symbol=stock_tickers)
-df = dataframe(dataframe_df=data_analist_all,
-          default=dataframe_columns(list=data_analist_all),
-          trade_type=stock_tickers_trade_type,
-          symbol=stock_tickers)
-
+                  #  malti data  #  malti data  #  malti data  #  malti data
 
 metric_label(risk_dict=risk_management(risk_df=data_analist_all, symbol=None))
 left, right, = st.columns(2)  # center
@@ -403,9 +401,20 @@ df2 = dataframe(dataframe_df=data_analist_all,
 
 
 
+metric_label(risk_dict=risk_management(risk_df=data_analist_all,symbol=stock_tickers))
+left, right, = st.columns(2)  # center
+with left:
+    Profit_pie(pie_df=data_analist_all.round(2), symbol=stock_tickers)
+with right:
+    Loss_pie(pie_df=data_analist_all.round(2), symbol=stock_tickers)
+df = dataframe(dataframe_df=data_analist_all,
+          default=dataframe_columns(list=data_analist_all),
+          trade_type=stock_tickers_trade_type,
+          symbol=stock_tickers)
+
 
 
 
 # janral zorhodh
 #  JANRAL ZERODHA
-# streamlit run ZERODHA+26+11+2023++.py
+# streamlit run ZERODHA+updet.py
